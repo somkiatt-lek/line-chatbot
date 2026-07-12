@@ -34,6 +34,8 @@ function handleEvent(event) {
 }
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
+app.get('/', (req, res) => {
+  res.send('OK');
+});app.listen(port, () => {
   console.log(`LINE bot listening on port ${port}`);
 });
