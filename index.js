@@ -11,6 +11,18 @@ app.use(express.json());
 
 const client = new line.Client(config);
 
+const receivedEvents = new Map();
+const EVENT_CACHE_TTL = 1000 * 60 * 60; // เก็บ eventId ไว้ 1 ชั่วโมง
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [eventId, ts] of receivedEvents.entries()) {
+    if (now - ts > EVENT_CACHE_TTL) {
+      receivedEvents.delete(eventId);
+    }
+  }
+}, 1000 * 60);
+
 app.post('/webhook', line.middleware(config), (req, res) => {
   Promise.all(req.body.events.map(handleEvent))
     .then((result) => res.json(result))
@@ -21,6 +33,18 @@ app.post('/webhook', line.middleware(config), (req, res) => {
 });
 
 function handleEvent(event) {
+  if (!event.webhookEventId) {
+    console.warn('Missing webhookEventId:', event);
+    return Promise.resolve(null);
+  }
+
+  if (receivedEvents.has(event.webhookEventId)) {
+    console.log('Duplicate event ignored:', event.webhookEventId);
+    return Promise.resolve(null);
+  }
+
+  receivedEvents.set(event.webhookEventId, Date.now());
+
   if (event.type !== 'message' || event.message.type !== 'text') {
     return Promise.resolve(null);
   }
@@ -36,6 +60,8 @@ function handleEvent(event) {
 const port = process.env.PORT || 3000;
 app.get('/', (req, res) => {
   res.send('OK');
-});app.listen(port, () => {
+});
+
+app.listen(port, () => {
   console.log(`LINE bot listening on port ${port}`);
 });
