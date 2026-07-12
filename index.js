@@ -7,7 +7,6 @@ const config = {
 };
 
 const app = express();
-app.use(express.json());
 
 const client = new line.Client(config);
 
@@ -31,6 +30,8 @@ app.post('/webhook', line.middleware(config), (req, res) => {
       res.status(500).end();
     });
 });
+
+app.use(express.json());
 
 function handleEvent(event) {
   if (!event.webhookEventId) {
