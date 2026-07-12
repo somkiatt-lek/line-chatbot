@@ -29,7 +29,7 @@ async function uploadBuffer(buffer, filename, mimeType) {
 
   const parents = process.env.DRIVE_FOLDER_ID ? [process.env.DRIVE_FOLDER_ID] : undefined;
 
-  const res = await drive.files.create({
+  const createParams = {
     requestBody: {
       name: filename,
       parents,
@@ -40,7 +40,17 @@ async function uploadBuffer(buffer, filename, mimeType) {
       body: bufferToStream(buffer),
     },
     fields: 'id, webViewLink, mimeType',
-  });
+    // allow uploading to shared drives
+    supportsAllDrives: true,
+  };
+
+  // If you want to target a specific shared drive directly, set SHARED_DRIVE_ID
+  if (process.env.SHARED_DRIVE_ID) {
+    createParams.driveId = process.env.SHARED_DRIVE_ID;
+    createParams.corpora = 'drive';
+  }
+
+  const res = await drive.files.create(createParams);
   return res.data;
 }
 
